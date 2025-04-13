@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bitcoinny $BTC$ Miner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+  <style>
+    /* Global Styles */
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #1a1a1a;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      margin: 10px 0;
+    }
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hidden {
+      display: none;
+    }
+    /* Coin Animation */
+    .coin {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+      animation: rotate 3s infinite linear;
+      margin: 20px 0;
+    }
+    .coin-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 50%;
+    }
+    .coin-back {
+      transform: rotateY(180deg) scaleX(-1);
+    }
+    .coin-face img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    @keyframes rotate {
+      to { transform: rotateY(360deg); }
+    }
+    /* Container Boxes */
+    .container {
+      max-width: 400px;
+      width: 90%;
+      background: #222;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 10px;
+      box-shadow: 0 0 20px #444;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+    }
+    input {
+      background: #333;
+      color: white;
+    }
+    button {
+      background: #FFA500;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #FFD700;
+    }
+    .message {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+    /* Customer Service Link */
+    .cs-link {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #FFD700;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .cs-link:hover {
+      text-decoration: underline;
+    }
+    /* Admin Panel Specific */
+    #adminPanel {
+      display: none;
+    }
+    #dashboardOverview {
+      background: #333;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title and Animated Coin -->
+  <h1>Bitcoinny $BTC$</h1>
+  <div class="coin">
+    <div class="coin-face">
+      <img src="https://appincoin.fra1.cdn.digitaloceanspaces.com/uploads/1744510626497-lv8kbq.png" alt="Coin Front">
+    </div>
+    <div class="coin-face coin-back">
+      <img src="https://appincoin.fra1.cdn.digitaloceanspaces.com/uploads/1744510626497-lv8kbq.png" alt="Coin Back">
+    </div>
+  </div>
+
+  <!-- Login / Sign Up Container -->
+  <div id="authContainer" class="container">
+    <h2>🔐 Login / Sign Up</h2>
+    <input type="text" id="username" placeholder="Username (e.g., Abcde2)">
+    <input type="password" id="password" placeholder="Password (e.g., Abcdefgh2@)">
+    <button id="submitAuthBtn">🚀 Enter App</button>
+    <p id="authMessage" class="message"></p>
+  </div>
+
+  <!-- User Panel -->
+  <div id="userPanel" class="container hidden">
+    <h2>⛏️ BTC Miner</h2>
+    <p id="btcBalance">💰 BTC Balance: 0.00000000000000</p>
+    <button id="startMiningBtn">▶️ Start Mining</button>
+    <p id="statusMessage" class="message"></p>
+    <p id="timerDisplay" class="message">⏳ Time Left: 30:00</p>
+    <h3>💸 Withdraw BTC</h3>
+    <input type="text" id="wallet" placeholder="🏦 Wallet Address">
+    <input type="number" step="any" id="withdrawAmount" placeholder="💵 Amount in BTC">
+    <button id="requestWithdrawBtn">📤 Request Withdrawal</button>
+    <p id="withdrawMessage" class="message"></p>
+    <!-- Customer Service Link -->
+    <a class="cs-link" href="https://wa.me/233594562650" target="_blank">Chat with Customer Service on WhatsApp</a>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="container">
+    <h2>🔧 Admin Panel</h2>
+    <div id="dashboardOverview">
+      <p>Total Pending: <span id="totalPending">0</span></p>
+      <p>Total Approved: <span id="totalApproved">0</span></p>
+      <p>Total Declined: <span id="totalDeclined">0</span></p>
+    </div>
+    <table id="adminTable" class="display nowrap" style="width:100%">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Wallet</th>
+          <th>Amount (BTC)</th>
+          <th>Status</th>
+          <th>Timestamp</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Withdrawal requests will be populated dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Include jQuery and DataTables libraries -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+  
+  <script>
+    // --- Global Variables & Constants ---
+    const adminCredentials = { username: "Lawaljnr10", password: "Lawaljnr10@" };
+    const miningRate = 0.00000000000970; // BTC per second
+    const miningDuration = 30 * 60; // 30 minutes in seconds
+    const minWithdrawal = 0.000018;
+    let currentUser = "";
+    let minedBtc = 0;
+    let miningActive = false;
+    let timerInterval;
+    let remainingSeconds = miningDuration;
+    let withdrawals = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+    let userDatabase = JSON.parse(localStorage.getItem('userDatabase') || '{}');
+
+    // --- Regex for Username and Password Validation ---
+    // Username: at least 6 characters, at least one capital letter and one digit.
+    const usernameRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    // Password: at least 7 characters, at least one capital letter, one digit, and one special character.
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{7,}$/;
+
+    // --- Save Data to localStorage ---
+    function saveData() {
+      localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+      localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+    }
+
+    // --- Authentication and Persistence ---
+    document.getElementById('submitAuthBtn').addEventListener('click', () => {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+
+      // First check for admin login
+      if (user === adminCredentials.username && pass === adminCredentials.password) {
+        showAdminPanel();
+        return;
+      }
+
+      // Validate username and password formats
+      if (!usernameRegex.test(user)) {
+        document.getElementById('authMessage').innerText = "⚠️ Username must have at least 6 characters, 1 capital letter, and 1 number.";
+        return;
+      }
+      if (!passwordRegex.test(pass)) {
+        document.getElementById('authMessage').innerText = "⚠️ Password must have at least 7 characters, 1 capital letter, 1 number, and 1 special character.";
+        return;
+      }
+
+      // Auto-signup if user doesn't exist; otherwise check password.
+      if (!userDatabase[user]) {
+        userDatabase[user] = { password: pass, balance: 0, miningState: { active: false, remainingSeconds: miningDuration } };
+        alert("✅ Signed up successfully! You can now log in.");
+        saveData();
+      } else if (userDatabase[user].password !== pass) {
+        alert("❌ Incorrect password!");
+        return;
+      }
+
+      currentUser = user;
+      minedBtc = userDatabase[user].balance;
+      // Restore mining state if mining was already started.
+      if (userDatabase[user].miningState.active) {
+        miningActive = true;
+        remainingSeconds = userDatabase[user].miningState.remainingSeconds;
+        minedBtc = userDatabase[user].balance;
+        startMining(true);
+      }
+      showUserPanel();
+    });
+
+    function showUserPanel() {
+      document.getElementById('authContainer').classList.add("hidden");
+      document.getElementById('userPanel').classList.remove("hidden");
+      document.getElementById('adminPanel').classList.add("hidden");
+      updateDisplay();
+    }
+
+    // --- Update Display of BTC Balance and Timer ---
+    function updateDisplay() {
+      document.getElementById('btcBalance').innerText = `💰 BTC Balance: ${minedBtc.toFixed(12)}`;
+      const mins = Math.floor(remainingSeconds / 60);
+      const secs = remainingSeconds % 60;
+      document.getElementById('timerDisplay').innerText = `⏳ Time Left: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // --- Mining Functionality ---
+    function startMining(restore = false) {
+      if (miningActive || remainingSeconds <= 0) return;
+      miningActive = true;
+      // If not restoring, set the start time.
+      if (!restore) {
+        userDatabase[currentUser].miningState.active = true;
+        userDatabase[currentUser].miningState.remainingSeconds = remainingSeconds;
+        saveData();
+      }
+      timerInterval = setInterval(() => {
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          miningActive = false;
+          userDatabase[currentUser].miningState.active = false;
+          saveData();
+          document.getElementById('statusMessage').innerText = "✅ Mining completed.";
+          return;
+        }
+        remainingSeconds--;
+        minedBtc += miningRate;
+        userDatabase[currentUser].balance = minedBtc;
+        userDatabase[currentUser].miningState.remainingSeconds = remainingSeconds;
+        updateDisplay();
+        saveData();
+      }, 1000);
+      document.getElementById('statusMessage').innerText = "⚙️ Mining started for 30 minutes...";
+    }
+
+    document.getElementById('startMiningBtn').addEventListener('click', () => {
+      startMining();
+    });
+
+    // --- Withdrawal Request ---
+    document.getElementById('requestWithdrawBtn').addEventListener('click', () => {
+      const wallet = document.getElementById('wallet').value.trim();
+      const amount = parseFloat(document.getElementById('withdrawAmount').value.trim());
+      if (!wallet || isNaN(amount)) {
+        document.getElementById('withdrawMessage').innerText = "⚠️ Please fill all fields.";
+        return;
+      }
+      if (amount < minWithdrawal) {
+        document.getElementById('withdrawMessage').innerText = "⚠️ Minimum withdrawal is 0.000018 BTC.";
+        return;
+      }
+      if (amount > minedBtc) {
+        document.getElementById('withdrawMessage').innerText = "❌ Insufficient balance.";
+        return;
+      }
+      const timestamp = new Date().toLocaleString();
+      withdrawals.push({ user: currentUser, wallet: wallet, amount: amount, status: "Pending", timestamp: timestamp });
+      minedBtc -= amount;
+      userDatabase[currentUser].balance = minedBtc;
+      saveData();
+      document.getElementById('withdrawMessage').innerText = "✅ Withdrawal request submitted (Pending Admin Approval).";
+      updateDisplay();
+    });
+
+    // --- Enhanced Admin Panel ---
+    function showAdminPanel() {
+      document.getElementById('authContainer').classList.add("hidden");
+      document.getElementById('userPanel').classList.add("hidden");
+      document.getElementById('adminPanel').classList.remove("hidden");
+      renderAdminTable();
+    }
+
+    function renderAdminTable() {
+      // Update dashboard overview counts.
+      let pending = 0, approved = 0, declined = 0;
+      let tableHTML = "";
+      withdrawals.forEach((req, i) => {
+        if (req.status === "Pending") pending++;
+        else if (req.status === "Approved") approved++;
+        else if (req.status === "Declined") declined++;
+        tableHTML += `<tr>
+                        <td>${req.user}</td>
+                        <td><button onclick="copyText('${req.wallet}')">${req.wallet}</button></td>
+                        <td><button onclick="copyText('${req.amount}')">${req.amount}</button></td>
+                        <td>${req.status}</td>
+                        <td>${req.timestamp}</td>
+                        <td>${req.status === "Pending" ?
+                            `<button onclick="updateStatus(${i}, 'Approved')">✅ Approve</button>
+                             <button onclick="updateStatus(${i}, 'Declined')">❌ Decline</button>` : ""}
+                        </td>
+                      </tr>`;
+      });
+      document.querySelector("#adminTable tbody").innerHTML = tableHTML;
+      document.getElementById('totalPending').textContent = pending;
+      document.getElementById('totalApproved').textContent = approved;
+      document.getElementById('totalDeclined').textContent = declined;
+      
+      // Initialize or reinitialize DataTables.
+      if ($.fn.DataTable.isDataTable('#adminTable')) {
+        $('#adminTable').DataTable().destroy();
+      }
+      $('#adminTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+          'copyHtml5',
+          'csvHtml5'
+        ],
+        responsive: true
+      });
+    }
+
+    function updateStatus(index, newStatus) {
+      withdrawals[index].status = newStatus;
+      saveData();
+      renderAdminTable();
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied: " + text);
+      });
+    }
+  </script>
+</body>
+</html>
